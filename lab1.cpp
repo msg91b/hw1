@@ -64,7 +64,12 @@ struct Particle {
 };
 
 struct Game {
-	Shape box;
+	Shape box1;
+	Shape box2;
+	Shape box3;
+	Shape box4;
+	Shape box5;
+	Shape circle;
 	Particle particle[MAX_PARTICLES];
 	int n;
 };
@@ -86,14 +91,44 @@ int main(void)
 	initXWindows();
 	init_opengl();
 	//declare game object
+	
 	Game game;
 	game.n=0;
 
-	//declare a box shape
-	game.box.width = 100;
-	game.box.height = 10;
-	game.box.center.x = 120 + 5*65;
-	game.box.center.y = 500 - 5*60;
+	//declare a box1 shape
+	game.box1.width = 100;
+	game.box1.height = 15;
+	game.box1.center.x = 100 + 1*65;
+	game.box1.center.y = 800 - 5*60;
+	
+	//declare a box2 shape
+	game.box2.width = 100;
+	game.box2.height = 15;
+	game.box2.center.x = 100 + 2*70;
+	game.box2.center.y = 725 - 5*60;
+	
+	//declare box3 shape
+	game.box3.width = 100;
+	game.box3.height = 15;
+	game.box3.center.x = 100 + 3*75;
+	game.box3.center.y = 650 - 5*60;
+	
+	//declare box4 shape
+	game.box4.width = 100;
+	game.box4.height = 15;
+	game.box4.center.x = 100 + 4*80;
+	game.box4.center.y = 575 - 5*60;
+	
+	//declare box5 shape
+	game.box5.width = 100;
+	game.box5.height = 15;
+	game.box5.center.x = 100 + 5*85;
+	game.box5.center.y = 500 - 5*60;
+	
+	//declare circle shape
+	game.circle.radius = 150;
+	game.circle.center.x = 140 + 10*56;
+	game.circle.center.y = 400 - 7*60;
 
 	//start animation
 	while(!done) {
@@ -220,12 +255,24 @@ int check_keys(XEvent *e, Game *game)
 			return 1;
 		}
 		//You may check other keys here.
+		else if(key == XK_b) {
+			return 2;
+		}	
 	}
 	return 0;
 }
 
-void movement(Game *game)
-{
+void collision(Particle *p, Shape *s){
+	if(p->s.center.y >= s->center.y - (s->height) && 
+		p->s.center.y <= s->center.y + (s->height) &&
+		p->s.center.x >= s->center.x - (s->width) &&
+		p->s.center.x <= s->center.x + (s->width)){
+			p->velocity.y =.1;
+			//p->s.center.z = 1;
+	}
+}
+
+void movement(Game *game) {
 	Particle *p;
 
 	if (game->n <= 0)
@@ -236,20 +283,36 @@ void movement(Game *game)
 		p->s.center.y += p->velocity.y;
 	
 		//gravity
-		p->velocity.y -= 0.2;
+		p->velocity.y -= GRAVITY;
 
 		//check for collision with shapes...
+		collision(p, &game->box1);
+		collision(p, &game->box2);
+		collision(p, &game->box3);
+		collision(p, &game->box4);
+		collision(p, &game->box5);
+		
 		Shape *s;
-		s = &game->box;
-		if(p->s.center.y >= s->center.y - (s->height) && 
-		   p->s.center.y <= s->center.y + (s->height) &&
-		   p->s.center.x >= s->center.x - (s->width) &&
-		   p->s.center.x <= s->center.x + (s->width)){
+		s = &game->circle;
+		float x = p->s.center.x - s->center.x;
+		float y = p->s.center.y - s->center.y;
+		float sroot = sqrtf(x*x - y*y);
+		std::cout << sroot << std::endl;
+		if(p->s.center.y <= sroot) {
+		//	std::cout << "it's a circle" << std::endl;
 			p->velocity.y *= -1.0;
 		}
 	
-	
-		//check for off-screen
+		
+	/*	if(p->s.center.y >= s->center.y - (s->height) && 
+		p->s.center.y <= s->center.y + (s->height) &&
+		p->s.center.x >= s->center.x - (s->width) &&
+		p->s.center.x <= s->center.x + (s->width)){
+			p->velocity.y *= -1.0;
+	}*/
+
+
+	//check for off-screen
 		if (p->s.center.y < 0.0) {
 			std::cout << "off screen" << std::endl;
 			game->particle[i] = game->particle[game->n-1];
@@ -258,20 +321,13 @@ void movement(Game *game)
 	}
 }
 
-void render(Game *game)
-{
+void drawBox(Shape *t){
 	float w, h;
-	glClear(GL_COLOR_BUFFER_BIT);
-	//Draw shapes...
-
-	//draw box
-	Shape *s;
-	glColor3ub(90,140,90);
-	s = &game->box;
+	
 	glPushMatrix();
-	glTranslatef(s->center.x, s->center.y, s->center.z);
-	w = s->width;
-	h = s->height;
+	glTranslatef(t->center.x, t->center.y, t->center.z);
+	w = t->width;
+	h = t->height;
 	glBegin(GL_QUADS);
 		glVertex2i(-w,-h);
 		glVertex2i(-w, h);
@@ -279,7 +335,35 @@ void render(Game *game)
 		glVertex2i( w,-h);
 	glEnd();
 	glPopMatrix();
+}
 
+void render(Game *game)
+{
+	float w, h;
+	glClear(GL_COLOR_BUFFER_BIT);
+	glColor3ub(90,255,90);
+
+	//Draw shapes...
+	glBegin(GL_POLYGON);
+	int radius = game->circle.radius;
+	int x = game->circle.center.x;
+	int y = game->circle.center.y;
+	for(int i = 0; i < 360; i++){
+		float deg = 2.0f * M_PI * i/360;
+		glVertex2d(radius*cos(deg) + x, radius*sin(deg) + y);
+	}
+	glEnd();
+		
+	//draw text
+
+	
+	//draw boxes
+	drawBox(&game->box1);
+	drawBox(&game->box2);
+	drawBox(&game->box3);
+	drawBox(&game->box4);
+	drawBox(&game->box5);
+	
 	//draw all particles here
 	glPushMatrix();
 	glColor3ub(150,160,220);
