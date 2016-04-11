@@ -34,9 +34,9 @@
 #include <X11/Xlib.h>
 #include <X11/keysym.h>
 #include <GL/glx.h>
-extern "C" {
-	#include "fonts.h"
-}
+//extern "C" {
+//	#include "fonts.h"
+//}
 
 //Macros
 #define rnd() (((double)rand())/(double)RAND_MAX)
@@ -44,7 +44,7 @@ extern "C" {
 #define WINDOW_WIDTH  500
 #define WINDOW_HEIGHT 360
 
-#define MAX_PARTICLES 4000
+#define MAX_PARTICLES 3000
 #define GRAVITY 0.1
 
 //X Windows variables
@@ -71,8 +71,7 @@ struct Particle {
 struct Game {
 	Shape box1, box2, box3, box4, box5, circle;
 	Particle particle[MAX_PARTICLES];
-	int n;
-    int bPressed;
+	int n, bPressed;
 };
 
 //Function prototypes
@@ -85,8 +84,8 @@ void movement(Game *game);
 void render(Game *game);
 
 
-int main(void)
-{
+
+int main(void) {
 	int done=0;
 	srand(time(NULL));
 	initXWindows();
@@ -95,15 +94,14 @@ int main(void)
 	
 	Game game;
 	game.n=0;
-    game.bPressed = 0;
-
+    	game.bPressed = 0;
 	//declare a box1 shape
 	game.box1.width = 75;
 	game.box1.height = 12;
 	game.box1.center.x = 100;
 	game.box1.center.y = WINDOW_HEIGHT - 57;
 	
-	//declare a box2 shape
+	//declare a box2 shaipe
 	game.box2.width = 75;
 	game.box2.height = 12;
 	game.box2.center.x = 160;
@@ -148,8 +146,7 @@ int main(void)
 	return 0;
 }
 
-void set_title(void)
-{
+void set_title(void) {
 	//Set the window title bar.
 	XMapWindow(dpy, win);
 	XStoreName(dpy, win, "335 Hw1   Waterfall Model");
@@ -190,8 +187,7 @@ void initXWindows(void) {
 	glXMakeCurrent(dpy, win, glc);
 }
 
-void init_opengl(void)
-{
+void init_opengl(void) {
 	//OpenGL initialization
 	glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
 	//Initialize matrices
@@ -202,8 +198,8 @@ void init_opengl(void)
 	//Set the screen background color
 	glClearColor(0.1, 0.1, 0.1, 1.0);
     //Do this to allow fonts
-    glEnable(GL_TEXTURE_2D);
-    initialize_fonts();
+   // glEnable(GL_TEXTURE_2D);
+    //initialize_fonts();
 }
 
 void makeParticle(Game *game, int x, int y) {
@@ -212,11 +208,15 @@ void makeParticle(Game *game, int x, int y) {
 	//std::cout << "makeParticle() " << x << " " << y << std::endl;
 	//position of particle
 	Particle *p = &game->particle[game->n];
+	//particle[game->n] += 1;
 	p->s.center.x = x;
 	p->s.center.y = y;
-	p->velocity.y = rnd();
-	p->velocity.x = rnd();
+	p->velocity.y = rnd()-.5;
+	p->velocity.x = rnd()-.5;
 	game->n++;
+	//p->particle++;
+
+	glColor3ub(150,rand(),220);
 }
 
 void check_mouse(XEvent *e, Game *game)
@@ -274,8 +274,9 @@ void collision(Particle *p, Shape *s) {
 		p->s.center.y <= s->center.y + (s->height) &&
 		p->s.center.x >= s->center.x - (s->width) &&
 		p->s.center.x <= s->center.x + (s->width)){
-            p->velocity.y *= -.7;
-            //p->velocity.x +=  .0005;
+            		p->velocity.y *= -.5;
+			p->velocity.x += .05;
+			p->s.center.x += 10;
 	}
 }
 
@@ -310,7 +311,7 @@ void movement(Game *game) {
                 p->velocity.x = -rnd();
             
             p->velocity.y = rnd();
-        }	
+	}        	
 
         //check for off-screen
 		if (p->s.center.y < 0.0) {
@@ -339,16 +340,20 @@ void drawBox(Shape *t){
 
 void render(Game *game)
 {    
-    Rect r;
+    //Rect r;
     float w, h;
     glClear(GL_COLOR_BUFFER_BIT);  
     
     glColor3ub(90,140,90);
     
+    //glColor3ub(rand(),rand(),rand());
     //draw particles if B pressed
-    if (game->bPressed) 
-        makeParticle(game, 120, WINDOW_HEIGHT - 10);
-
+    if (game->bPressed) {
+	    for(int i = 0; i < 7; i++) {
+        	makeParticle(game, 120, WINDOW_HEIGHT - 10);
+	    }
+	//makeParticle(game, 120, WINDOW_HEIGHT - 10);	
+    }
  	//draw boxes
 	drawBox(&game->box1);
 	drawBox(&game->box2);
@@ -368,35 +373,36 @@ void render(Game *game)
 	glEnd();
     
 	//draw text
-    r.bot = WINDOW_HEIGHT - 20;
-    r.left = 10;
-    r.center = 0;
-    ggprint8b(&r, 16, 0xffffff, "Waterfall Model");
+  	//r.bot = WINDOW_HEIGHT - 20;
+  	//r.left = 10;
+  //  r.center = 0;
+  //  ggprint8b(&r, 16, 0xffffff, "Waterfall Model");
     
-    r.bot = WINDOW_HEIGHT - 68;
-    r.left = 40;
-    ggprint16(&r, 16, 0xffff00, "Requirements");
+  //  r.bot = WINDOW_HEIGHT - 68;
+  //  r.left = 40;
+  //  ggprint16(&r, 16, 0xffff00, "Requirements");
     
-    r.bot = WINDOW_HEIGHT - 118;
-    r.left = 130;
-    ggprint16(&r, 16, 0xffff00, "Design");
+  //  r.bot = WINDOW_HEIGHT - 118;
+  //  r.left = 130;
+  //  ggprint16(&r, 16, 0xffff00, "Design");
     
-    r.bot = WINDOW_HEIGHT - 168;
-    r.left = 190;
-    ggprint16(&r, 16, 0xffff00, "Coding");
+  //  r.bot = WINDOW_HEIGHT - 168;
+   // r.left = 190;
+  //  ggprint16(&r, 16, 0xffff00, "Coding");
     
-    r.bot = WINDOW_HEIGHT - 218;
-    r.left = 245;
-    ggprint16(&r, 16, 0xffff00, "Testing");
+   // r.bot = WINDOW_HEIGHT - 218;
+   // r.left = 245;
+  //  ggprint16(&r, 16, 0xffff00, "Testing");
     
-    r.bot = WINDOW_HEIGHT - 268;
-    r.left = 288;
-    ggprint16(&r, 16, 0xffff00, "Maintenance");
+  //  r.bot = WINDOW_HEIGHT - 268;
+  //  r.left = 288;
+  //  ggprint16(&r, 16, 0xffff00, "Maintenance");
         
     
 	//draw all particles here
 	glPushMatrix();
 	glColor3ub(150,160,220);
+	//glColor3ub(rand(),rand(),rand());
 	for(int i = 0; i <game->n; i++){
 		Vec *c = &game->particle[i].s.center;
 		w = 2;
